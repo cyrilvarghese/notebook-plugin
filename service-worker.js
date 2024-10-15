@@ -16,7 +16,7 @@ function setupContextMenu() {
   chrome.contextMenus.create({
     id: 'define-word',
     title: 'Add To Notes',
-    contexts: ['link', 'selection']
+    contexts: ['link', 'selection','image']
   });
 }
 
@@ -26,13 +26,18 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((data, tab) => {
   // Store the last word in chrome.storage.session.
-  console.log(data)
-  if (data.linkUrl)
-    chrome.runtime.sendMessage({ title: data.linkUrl,text:"" });
-  // chrome.storage.session.set({ info: data.linkUrl});
-  else if (data.selectionText)
-    chrome.runtime.sendMessage({ title: data.pageUrl, text: data.selectionText });
-  // chrome.storage.session.set({ info: data.selectionText});
+  console.log(data);
+  if (data.mediaType === 'image') {
+    // chrome.tabs.sendMessage(tab.id, {
+    //   action: 'getAltText',
+    //   imageSrc: data.srcUrl
+    // });
+    chrome.runtime.sendMessage({ title: data.pageUrl, text: data.srcUrl, type: 'image' });
+  } else if (data.linkUrl) {
+    chrome.runtime.sendMessage({ title: data.linkUrl, text: "", type: 'link' });
+  } else if (data.selectionText) {
+    chrome.runtime.sendMessage({ title: data.pageUrl, text: data.selectionText, type: 'text' });
+  }
   // Make sure the side panel is open.
   chrome.sidePanel.open({ tabId: tab.id });
 });
