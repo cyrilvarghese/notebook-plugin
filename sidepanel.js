@@ -104,7 +104,7 @@ function updateDefinition(word, text, type) {
     image.src = text;
     image.alt = `Image ${imageCount}`;
     image.style.maxWidth = '100%';
-    fetchDescription(image, wordElement); 
+    // fetchDescription(image, wordElement); 
     imageItem.appendChild(image);
     imageList.appendChild(imageItem);
     wordElement.appendChild(imageList);
