@@ -15,13 +15,6 @@
 const storedWords = [];
 let imageCount = 0;
 
-const words = {
-  extensions:
-
-    'Extensions are software programs, built on web technologies (such as HTML, CSS, and JavaScript) that enable users to customize the Chrome browsing experience.',
-  popup:
-    "A UI surface which appears when an extension's action icon is clicked."
-};
 
 
 const redirectUrl = 'http://localhost:8001?prev=';
@@ -54,10 +47,10 @@ function createElementWithClass(tag, className) {
   return element;
 }
 
-function updateDefinition(word, text, type) {
-  if (!word || storedWords.includes(word)) return;
+function updateDefinition(link, text, type) {
+  if (!link || storedWords.includes(link)) return;
 
-  storedWords.push(word);
+  storedWords.push(link);
   const definitionsContainer = document.getElementById('definitions-container');
   const wordElement = createElementWithClass('div', 'word-definition');
 
@@ -67,10 +60,10 @@ function updateDefinition(word, text, type) {
   const wordHeader = createElementWithClass('div', 'word-header');
   const checkbox = createElementWithClass('input', 'word-checkbox');
   checkbox.type = 'checkbox';
-  checkbox.addEventListener('change', (event) => handleCheckboxChange(event, word, wordElement));
+  checkbox.addEventListener('change', (event) => handleCheckboxChange(event, link, wordElement));
 
   const wordTitle = createElementWithClass('h3', 'word-title');
-  wordTitle.innerText = word;
+  wordTitle.innerText = link;
   wordTitle.style.width = '300px';
   wordTitle.style.wordWrap = 'break-word';
 
@@ -87,7 +80,7 @@ function updateDefinition(word, text, type) {
     loadingSpinner.className = 'loading-spinner';
     // Add the loading spinner as a separate div below the link
     wordElement.appendChild(loadingSpinner);
-    fetchSummary(word, wordElement, loadingSpinner);
+    fetchSummary(link, wordElement, loadingSpinner);
 
   } else if (type === 'text') {
     const wordSummary = document.createElement('p');
@@ -98,34 +91,12 @@ function updateDefinition(word, text, type) {
 
     wordElement.append(wordSummary, actualText);
   } else if (type === 'image') {
-    const imageList = createElementWithClass('ul', 'image-list');
-    const imageItem = createElementWithClass('li', 'image-item');
-    const image = document.createElement('img');
-    image.src = text;
-    image.alt = `Image ${imageCount}`;
-    image.style.maxWidth = '100%';
-    // fetchDescription(image, wordElement); 
-    imageItem.appendChild(image);
-    imageList.appendChild(imageItem);
-    wordElement.appendChild(imageList);
+    const loadingSpinner = document.createElement('div');
+    loadingSpinner.className = 'loading-spinner';
+    // Add the loading spinner as a separate div below the link
+    wordElement.appendChild(loadingSpinner);
+    fetchDescription(link, text, wordElement,loadingSpinner);
 
-    // Add textarea below the image
-    const textarea = document.createElement('textarea');
-    textarea.className = 'image-description';
-    textarea.placeholder = 'Enter image description here...';
-    textarea.rows = 3; // You can adjust this value as needed
-    textarea.style.width = '100%';
-    textarea.style.marginTop = '10px';
-    wordElement.appendChild(textarea);
-
-    // Create hidden text element for consistency with other types
-    const actualText = document.createElement('p');
-    actualText.style.display = 'none';
-    actualText.innerText = `${text}`;
-    wordElement.appendChild(actualText);
-
-    // Increment the image count
-    imageCount++;
   }
 
   definitionsContainer.appendChild(wordElement);
@@ -140,20 +111,61 @@ function isValidUrl(string) {
   }
 }
 
-function fetchDescription(image, wordElement) {
+function fetchDescription(imageSrc, text, wordElement,loadingSpinner) {
   const baseUrl = 'http://127.0.0.1:8000/process-image/';
   const params = new URLSearchParams({
-    image_url: image.src,
-    topic: localStorage.getItem('currentTopic')
+    image_url: imageSrc,
+    topic: text
   });
   const apiUrl = `${baseUrl}?${params.toString()}`;
 
   fetch(apiUrl)
     .then(response => response.json())
     .then(data => {
-      const wordSummary = document.createElement('p');
-      wordSummary.innerText = data.description || 'No description available'; 
-      wordElement.appendChild(wordSummary);
+      // Create image list and item
+      const imageList = createElementWithClass('ul', 'image-list');
+      imageList.style.listStyle = 'none';
+      imageList.style.paddingInlineStart = '0px';
+      const imageItem = createElementWithClass('li', 'image-item');
+      const imgElement = document.createElement('img');
+      imgElement.src = data.image_url;
+      imgElement.alt = data.generated_title || `Image ${imageCount}`;
+      imgElement.style.maxWidth = '100%';
+      imageItem.appendChild(imgElement);
+      imageList.appendChild(imageItem);
+      wordElement.appendChild(imageList);
+
+      // Add title
+      const titleElement = document.createElement('h4');
+      titleElement.innerText = data.generated_title || 'Untitled Image';
+      wordElement.appendChild(titleElement);
+
+      // Add caption
+      const captionElement = document.createElement('p');
+      captionElement.innerText = data.generated_caption || 'No caption available';
+      captionElement.className = 'image-caption';
+      wordElement.appendChild(captionElement);
+
+      // Add textarea for description
+      const textarea = document.createElement('textarea');
+      textarea.className = 'image-description';
+      textarea.value = data.generated_description || '';
+      textarea.placeholder = 'Enter image description here...';
+      textarea.rows = 3;
+      textarea.style.width = '100%';
+      textarea.style.marginTop = '10px';
+      wordElement.appendChild(textarea);
+
+      // Create hidden text element for consistency with other types
+      const actualText = document.createElement('p');
+      actualText.style.display = 'none';
+      actualText.innerText = JSON.stringify(data);
+      wordElement.appendChild(actualText);
+
+      // Increment the image count
+      imageCount++;
+      wordElement.removeChild(loadingSpinner);
+
     })
     .catch(error => {
       console.error('Error fetching description:', error);

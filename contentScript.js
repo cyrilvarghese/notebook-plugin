@@ -8,17 +8,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         window.location.href = `${redirectUrl}${encodeURIComponent(currentLocation)}`;
     }
 });
-
-// content-script.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getAltText' && request.imageSrc) {
-      // Find the image on the page by its src URL
-      const img = document.querySelector(`img[src="${request.imageSrc}"]`);
-      
-      if (img) {
-        const altText = img.getAttribute('alt') || 'No alt attribute';
-        // Send the alt text back to the service worker
-        chrome.runtime.sendMessage({ title: request.imageSrc, text: altText, type: 'image' });
-      }
+        // Get all image elements on the page
+        const images = document.querySelectorAll('img');
+
+        let foundImage = null;
+
+        images.forEach((img) => {
+            // Check if the image's src contains the clicked image's src as a substring (partial match)
+            if (img.src.includes(request.imageSrc)) {
+                foundImage = img;
+            }
+        });
+
+        if (foundImage) {
+            const altText = foundImage.getAttribute('alt') || 'No alt attribute';
+            // Send the alt text back to the service worker
+            chrome.runtime.sendMessage({ title: request.imageSrc, text: altText, type: 'image' });
+        } else {
+            chrome.runtime.sendMessage({ title: request.imageSrc, text: 'Image not found or no alt text', type: 'image' });
+        }
     }
-  });
+});
