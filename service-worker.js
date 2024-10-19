@@ -16,7 +16,7 @@ function setupContextMenu() {
   chrome.contextMenus.create({
     id: 'define-word',
     title: 'Add To Notes',
-    contexts: ['link', 'selection', 'image']
+    contexts: ['link', 'selection','image']
   });
 }
 
@@ -28,14 +28,10 @@ chrome.contextMenus.onClicked.addListener((data, tab) => {
   // Store the last word in chrome.storage.session.
   console.log(data);
   if (data.mediaType === 'image') {
-    if (data.srcUrl.endsWith('.webp')) {
-      alert('Please select another image. .webp files are not supported.');
-    } else {
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'getAltText',
-        imageSrc: data.srcUrl
-      });
-    }
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'getAltText',
+      imageSrc: data.srcUrl
+    });
     // chrome.runtime.sendMessage({ title: data.pageUrl, text: data.srcUrl, type: 'image' });
   } else if (data.linkUrl) {
     chrome.runtime.sendMessage({ title: data.linkUrl, text: "", type: 'link' });

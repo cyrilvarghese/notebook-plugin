@@ -9,7 +9,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'getAltText' && request.imageSrc) {
+    if (request.imageSrc && request.imageSrc.endsWith('.webp')) {
+        alert('Please select another image. .webp files are not supported.');
+
+    }
+    else if (request.action === 'getAltText' && request.imageSrc) {
         // Get all image elements on the page
         const images = document.querySelectorAll('img');
 
